@@ -1,26 +1,11 @@
 let addToy = false;
 const collectionDiv = document.getElementById("toy-collection");
 const form = document.querySelector('form');
-// const likeButtons = document.querySelectorAll('.like-btn')
-let errorDiv = document.createElement('div')
-errorDiv.setAttribute('class', 'error');
-document.body.appendChild(errorDiv);
 
-function addToDom(toy) {
-  let newDiv = document.createElement('div');
-  newDiv.className= "card";
-  newDiv.innerHTML = 
-  `<h2>${toy.name}</h2>
-   <img sc="${toy.image}">
-   <p>${toy.likes} likes</p>
-   <button class="like-btn" id="${toy.id}">Like</button>`;
-  collectionDiv.appendChild(newDiv);
-}
 
 document.addEventListener("DOMContentLoaded", () => {
   const addBtn = document.querySelector("#new-toy-btn");
   const toyFormContainer = document.querySelector(".container");
-  // const likeButtons = document.querySelectorAll('.like-btn');
   addBtn.addEventListener("click", () => {
     // hide & seek with the form
     addToy = !addToy;
@@ -32,41 +17,46 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   return fetch("http://localhost:3000/toys")
-    .then( function(response) {
-      return response.json();
-    })
-    .then(function(toys) {
+    .then( resp => resp.json())
+    .then( toys => {
       for (const toy of toys) {
         addToDom(toy);
       }
-      let likeButtons = document.querySelectorAll('.like-btn');
-      likeButtons.forEach( button => {
-        button.addEventListener('click', activateLikeButton())
-      })
-    });
+    })
 });
 
-function handleLikes() {
-  console.log("hello")
-  // return fetch(`http://localhost:3000/toys/${button.id}`, {
-  //   method: "PATCH",
-  //   headers: {
-  //     "Content-Type": "applicaotn/json",
-  //     "Accept": "application/json"
-  //   },
-  //   body: JSON.stringify({
-  //     likes: button.parentElement.querySelector('p').innerText++
-  //   })
-  // })
-  //   .then(function(response) {
-  //     return response.json();
-  //   })
-  //   .then(function(toy) {
-  //     increaseLike(toy);
-  //   })
-  //   .catch(function(error) {
-  //     errorDiv.innerHTML = error.message;
-  //   })
+function addToDom(toy) {
+  let newDiv = document.createElement('div');
+  newDiv.className = "card";
+  newDiv.innerHTML = 
+  `<h2>${toy.name}</h2>
+   <img sc="${toy.image}">
+   <p>${toy.likes} likes</p>
+   <button class="like-btn" id="${toy.id}">Like</button>`;
+  collectionDiv.appendChild(newDiv);
+  let button = newDiv.querySelector('button');
+  button.addEventListener('click', (e) => {
+    handleLikes(e, toy.id, toy.likes);
+  });
+}
+
+function handleLikes(e, toyId, toyLikes) {  
+  e.preventDefault()
+  return fetch(`http://localhost:3000/toys/${toyId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "applicaotn/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify({
+      "likes": toyLikes++
+    })
+  })
+    .then( resp => resp.json() )
+    .then( (toy_obj) => {
+      e.target.previousElementSibling.innerText = `${toyLikes} likes`;
+    })
+    .catch( error => alert(error) )
 }
 
 
@@ -78,43 +68,21 @@ form.addEventListener("submit", function(event) {
 });
 
 function submitData(toyName, imgUrl) {
-  return fetch("http://localhost:3000/toys", {
+  let formData = {
+    name: toyName,
+    image: imgUrl,
+    likes: 0
+  };
+  let configObj = {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json"
     },
-    body: JSON.stringify({
-      name: toyName,
-      image: imgUrl,
-      likes: 0
-    })
-  })
-    .then(function(response) {
-      return response.json();
-    })
-    .then(function(toy) {
-      addToDom(toy);
-    })
-    .catch(function(error) {
-      document.body.innerHTML = error.message;
-    });
+    body: JSON.stringify(formData)
+  }
+  return fetch("http://localhost:3000/toys", configObj)
+    .then( resp => { return resp.json() } )
+    .then( toy => addToDom(toy) )
+    .catch( error => alert(error.message) )
 }
-
-
-
-// likeButtons.forEach(button => {
-//   button.addEventListener('click', function(e) {
-//     e.preventDefault();
-//     handleLikes();  
-//   })
-// })
-
-let activateLikeButton = function () {  
-  this.addEventListener('click', function(e) {
-    e.preventDefault();
-    handleLikes();  
-  })
-}
-
-
